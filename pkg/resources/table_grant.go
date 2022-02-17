@@ -112,6 +112,7 @@ func CreateTableGrant(d *schema.ResourceData, meta interface{}) error {
 	priv := d.Get("privilege").(string)
 	onFuture := d.Get("on_future").(bool)
 	grantOption := d.Get("with_grant_option").(bool)
+	roles := expandStringList(d.Get("roles").(*schema.Set).List())
 
 	if (schemaName == "") && !onFuture {
 		return errors.New("schema_name must be set unless on_future is true.")
@@ -139,6 +140,7 @@ func CreateTableGrant(d *schema.ResourceData, meta interface{}) error {
 		SchemaName:   schemaName,
 		Privilege:    priv,
 		GrantOption:  grantOption,
+		Roles:        roles,
 	}
 	if !onFuture {
 		grantID.ObjectName = tableName
@@ -237,7 +239,7 @@ func UpdateTableGrant(d *schema.ResourceData, meta interface{}) error {
 
 	// difference calculates roles/shares to add/revoke
 	difference := func(key string) (toAdd []string, toRevoke []string) {
-		old, new := d.GetChange("roles")
+		old, new := d.GetChange(key)
 		oldSet := old.(*schema.Set)
 		newSet := new.(*schema.Set)
 		toAdd = expandStringList(newSet.Difference(oldSet).List())
